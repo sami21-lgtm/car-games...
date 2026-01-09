@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Red Racer - Kids Edition</title>
+    <title>Super Red Racer - Download Game</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Arial', sans-serif; background: #333; display: flex; justify-content: center; align-items: center; height: 100vh; }
         #game-container { position: relative; width: 400px; height: 600px; background: #444; border: 5px solid #222; border-radius: 20px; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
@@ -17,7 +17,8 @@
         .btn { padding: 15px 30px; font-size: 18px; cursor: pointer; border: none; border-radius: 50px; font-weight: bold; text-transform: uppercase; transition: 0.3s; margin: 10px; }
         .btn-start { background: #ff4757; color: white; box-shadow: 0 5px #c0392b; }
         .btn-start:active { transform: translateY(3px); box-shadow: 0 2px #c0392b; }
-        .btn-download { background: #2ed573; color: white; text-decoration: none; font-size: 14px; }
+        .btn-download { background: #2ed573; color: white; text-decoration: none; font-size: 16px; display: inline-block; padding: 15px 30px; border-radius: 50px; } /* Changed to inline-block and added padding */
+        .btn-download:hover { background: #27ae60; }
 
         .hidden { display: none !important; }
     </style>
@@ -31,7 +32,7 @@
             <h1 style="font-size: 40px; color: #ff4757; margin-bottom: 5px;">SUPER RACER</h1>
             <p style="margin-bottom: 20px;">Avoid cars and collect coins!</p>
             <button class="btn btn-start" onclick="startGame()">Start Race! 🏎️</button>
-            <a id="downloadBtn" class="btn btn-download" href="#" download="SuperRedRacer.html" onclick="prepareDownload()">Download Game</a>
+            <a id="downloadGameLink" class="btn btn-download" href="#" download="SuperRedRacer.html">Download Game</a>
         </div>
 
         <canvas id="gameCanvas"></canvas>
@@ -42,6 +43,7 @@
     const ctx = canvas.getContext("2d");
     const scoreEl = document.getElementById("score");
     const overlay = document.getElementById("overlay");
+    const downloadGameLink = document.getElementById("downloadGameLink"); // Get the download link element
 
     canvas.width = 400;
     canvas.height = 600;
@@ -76,6 +78,13 @@
     window.addEventListener("mousedown", (e) => {
         if(!gameRunning) return;
         if(e.clientX < window.innerWidth/2) { if(player.x > 50) player.x -= 80; }
+        else { if(player.x < 250) player.x += 80; }
+    });
+     // Touch event for mobile
+    window.addEventListener("touchstart", (e) => {
+        if(!gameRunning) return;
+        let clientX = e.touches[0].clientX;
+        if(clientX < window.innerWidth/2) { if(player.x > 50) player.x -= 80; }
         else { if(player.x < 250) player.x += 80; }
     });
 
@@ -190,15 +199,25 @@
             <h1 style="color: #ff4757;">BOOM! CRASHED</h1>
             <p style="font-size: 20px;">You collected ${score} coins!</p>
             <button class="btn btn-start" onclick="startGame()">Try Again 🏎️</button>
-            <a class="btn btn-download" href="#" download="SuperRedRacer.html" onclick="prepareDownload()">Download Game</a>
+            <a class="btn btn-download" href="#" download="SuperRedRacer.html" id="restartDownloadLink">Download Game</a>
         `;
+        // Make sure the download link in the game over screen also works
+        document.getElementById("restartDownloadLink").onclick = prepareDownload;
     }
 
+    // This function prepares the download link with the current HTML content
     function prepareDownload() {
-        const html = document.documentElement.outerHTML;
-        const blob = new Blob([html], {type: 'text/html'});
-        document.getElementById("downloadBtn").href = URL.createObjectURL(blob);
+        const htmlContent = document.documentElement.outerHTML;
+        const blob = new Blob([htmlContent], {type: 'text/html'});
+        downloadGameLink.href = URL.createObjectURL(blob);
+        // For the game over screen's download link
+        if(document.getElementById("restartDownloadLink")) {
+            document.getElementById("restartDownloadLink").href = URL.createObjectURL(blob);
+        }
     }
+
+    // Initial call to prepare download link when the page loads
+    prepareDownload();
 </script>
 </body>
 </html>

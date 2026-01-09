@@ -4,23 +4,93 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Red Racer - Kids Edition</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Arial', sans-serif; background: #222; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        #game-container { position: relative; width: 100%; max-width: 400px; height: 90vh; background: #444; border: 4px solid #fff; border-radius: 15px; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        canvas { display: block; width: 100%; height: 100%; }
+        #ui { position: absolute; top: 15px; left: 15px; color: gold; font-size: 24px; font-weight: bold; text-shadow: 2px 2px #000; z-index: 10; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 20; text-align: center; }
+        .btn { padding: 15px 35px; font-size: 18px; cursor: pointer; border: none; border-radius: 50px; font-weight: bold; margin: 10px; transition: 0.3s; text-decoration: none; display: inline-block; }
+        .btn-start { background: #ff4757; color: white; }
+        .btn-download { background: #2ed573; color: white; font-size: 14px; }
+        .hidden { display: none !important; }
+    </style>
 </head>
 <body>
 
     <div id="game-container">
         <div id="ui">Coins: <span id="score">0</span></div>
-        
-        <div id="menu" class="overlay-screen">
-            <h1 class="game-title">RED RACER</h1>
-            <p class="game-subtitle">Collect Coins & Avoid Cars!</p>
+        <div id="menu" class="overlay">
+            <h1 style="color: #ff4757; font-size: 40px; margin-bottom: 5px;">RED RACER</h1>
+            <p style="margin-bottom: 20px;">Avoid Cars & Collect Coins!</p>
             <button class="btn btn-start" onclick="startGame()">START GAME 🏎️</button>
-            <a id="dl-link" class="btn btn-download" href="#" download="SuperRedRacer.html">DOWNLOAD GAME ⬇️</a>
+            <a id="dl-link" class="btn btn-download" href="#" download="SuperRedRacer.html">DOWNLOAD GAME</a>
         </div>
-
         <canvas id="gameCanvas"></canvas>
     </div>
 
-    <script src="script.js"></script>
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+    const menu = document.getElementById("menu");
+
+    canvas.width = 400; canvas.height = 600;
+
+    let score = 0, gameRunning = false, speed = 5;
+    let player = { x: 175, y: 480 }, enemies = [], coins = [], lineOffset = 0;
+
+    function startGame() {
+        menu.classList.add("hidden");
+        score = 0; speed = 5; enemies = []; coins = [];
+        gameRunning = true; update();
+    }
+
+    window.addEventListener("mousedown", move);
+    window.addEventListener("touchstart", (e) => move(e.touches[0]));
+
+    function move(e) {
+        if(!gameRunning) return;
+        if(e.clientX < window.innerWidth / 2) { if(player.x > 60) player.x -= 80; }
+        else { if(player.x < 260) player.x += 80; }
+    }
+
+    function update() {
+        if(!gameRunning) return;
+        ctx.fillStyle = "#333"; ctx.fillRect(0, 0, 400, 600); // Road
+        ctx.fillStyle = "#2ecc71"; ctx.fillRect(0, 0, 40, 600); ctx.fillRect(360, 0, 40, 600); // Grass
+
+        lineOffset += speed; if(lineOffset > 40) lineOffset = 0;
+        ctx.setLineDash([20, 20]); ctx.strokeStyle = "white"; ctx.beginPath();
+        ctx.moveTo(200, -40 + lineOffset); ctx.lineTo(200, 600); ctx.stroke();
+
+        // Draw Player (RED CAR)
+        ctx.fillStyle = "red"; ctx.beginPath(); ctx.roundRect(player.x, player.y, 50, 90, 10); ctx.fill();
+        ctx.fillStyle = "white"; ctx.fillRect(player.x+22, player.y, 6, 90); // Stripe
+
+        if(Math.random() < 0.02) enemies.push({x: [60, 140, 220, 300][Math.floor(Math.random()*4)], y: -100});
+        enemies.forEach((e, i) => {
+            e.y += speed;
+            ctx.fillStyle = "blue"; ctx.beginPath(); ctx.roundRect(e.x, e.y, 50, 80, 8); ctx.fill();
+            if(player.x < e.x+50 && player.x+50 > e.x && player.y < e.y+80 && player.y+90 > e.y) {
+                gameRunning = false; menu.classList.remove("hidden");
+                menu.innerHTML = `<h1>CRASHED!</h1><button class="btn btn-start" onclick="location.reload()">RETRY</button>`;
+            }
+            if(e.y > 600) enemies.splice(i, 1);
+        });
+
+        if(Math.random() < 0.01) coins.push({x: 60+Math.random()*280, y: -50});
+        coins.forEach((c, i) => {
+            c.y += speed; ctx.fillStyle = "gold"; ctx.beginPath(); ctx.arc(c.x, c.y, 12, 0, Math.PI*2); ctx.fill();
+            if(Math.hypot(player.x+25-c.x, player.y+45-c.y) < 35) { coins.splice(i, 1); score += 10; scoreEl.innerText = score; speed += 0.1; }
+        });
+
+        requestAnimationFrame(update);
+    }
+
+    // ডাউনলোড তৈরি
+    const blob = new Blob([document.documentElement.outerHTML], {type: 'text/html'});
+    document.getElementById("dl-link").href = URL.createObjectURL(blob);
+</script>
 </body>
 </html>

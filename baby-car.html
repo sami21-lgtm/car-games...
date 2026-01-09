@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baby Car Race - Fun Game</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; background: #222; }
+        #gameCanvas { display: block; background: #555; margin: 0 auto; border: 4px solid #fff; }
+        
+        /* UI Elements */
+        #ui { position: absolute; top: 10px; left: 10px; color: white; font-size: 20px; text-shadow: 2px 2px #000; }
+        #controls { position: absolute; bottom: 20px; width: 100%; text-align: center; }
+        
+        .btn {
+            padding: 15px 30px; font-size: 18px; cursor: pointer;
+            background: #ff4757; color: white; border: none; border-radius: 50px;
+            box-shadow: 0 5px #ff6b81; outline: none; margin: 5px;
+        }
+        .btn:active { transform: translateY(4px); box-shadow: 0 2px #ff6b81; }
+        
+        #downloadLink { text-decoration: none; display: inline-block; background: #2ed573; }
+    </style>
+</head>
+<body>
+
+    <div id="ui">Score: <span id="score">0</span></div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="controls">
+        <button class="btn" onclick="startGame()">Start Game</button>
+        <a id="downloadLink" class="btn" href="#" download="car-game.html" onclick="prepareDownload()">Download Game</a>
+    </div>
+
+    <audio id="raceSound" src="https://www.soundjay.com/mechanical/car-engine-start-01.mp3"></audio>
+    <audio id="coinSound" src="https://www.soundjay.com/buttons/button-3.mp3"></audio>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+    const raceSound = document.getElementById("raceSound");
+    const coinSound = document.getElementById("coinSound");
+
+    // স্ক্রিন সাইজ সেটআপ
+    canvas.width = window.innerWidth > 400 ? 400 : window.innerWidth - 20;
+    canvas.height = window.innerHeight - 150;
+
+    let score = 0;
+    let gameRunning = false;
+    let car = { x: canvas.width / 2 - 25, y: canvas.height - 100, w: 50, h: 80 };
+    let enemies = [];
+    let speed = 3;
+
+    // গেম শুরু করা
+    function startGame() {
+        if(gameRunning) return;
+        gameRunning = true;
+        score = 0;
+        scoreEl.innerText = score;
+        enemies = [];
+        raceSound.play();
+        update();
+    }
+
+    // মোবাইল এবং মাউস কন্ট্রোল
+    window.addEventListener("mousedown", moveCar);
+    window.addEventListener("touchstart", moveCar);
+
+    function moveCar(e) {
+        if (e.clientX < window.innerWidth / 2 || (e.touches && e.touches[0].clientX < window.innerWidth / 2)) {
+            if(car.x > 50) car.x -= 60; // বামে সরবে
+        } else {
+            if(car.x < canvas.width - 100) car.x += 60; // ডানে সরবে
+        }
+    }
+
+    function spawnEnemy() {
+        let xPos = Math.random() * (canvas.width - 50);
+        enemies.push({ x: xPos, y: -100, w: 50, h: 80 });
+    }
+
+    function update() {
+        if (!gameRunning) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // রাস্তার দাগ (Road lines)
+        ctx.strokeStyle = "white";
+        ctx.setLineDash([20, 20]);
+        ctx.beginPath();
+        ctx.moveTo(canvas.width / 2, 0);
+        ctx.lineTo(canvas.width / 2, canvas.height);
+        ctx.stroke();
+
+        // প্লেয়ার গাড়ি (নীল গাড়ি)
+        ctx.fillStyle = "cyan";
+        ctx.fillRect(car.x, car.y, car.w, car.h);
+        ctx.fillStyle = "black"; // চাকা
+        ctx.fillRect(car.x - 5, car.y + 10, 5, 20);
+        ctx.fillRect(car.x + car.w, car.y + 10, 5, 20);
+
+        // শত্রু গাড়ি বা বাধা
+        for (let i = 0; i < enemies.length; i++) {
+            let e = enemies[i];
+            e.y += speed;
+            ctx.fillStyle = "#ff4757";
+            ctx.fillRect(e.x, e.y, e.w, e.h);
+
+            // কলিশন বা ধাক্কা লাগা
+            if (car.x < e.x + e.w && car.x + car.w > e.x && car.y < e.y + e.h && car.y + car.h > e.y) {
+                alert("Game Over! Score: " + score);
+                gameRunning = false;
+                location.reload();
+            }
+
+            // পয়েন্ট সংগ্রহ
+            if (e.y > canvas.height) {
+                enemies.splice(i, 1);
+                score++;
+                scoreEl.innerText = score;
+                coinSound.play();
+                if(score % 5 === 0) speed += 0.5; // স্কোর বাড়লে গতি বাড়বে
+            }
+        }
+
+        if (Math.random() < 0.02) spawnEnemy();
+
+        requestAnimationFrame(update);
+    }
+
+    // ডাউনলোড করার জন্য ফাইল তৈরি করা
+    function prepareDownload() {
+        const htmlContent = document.documentElement.outerHTML;
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        document.getElementById("downloadLink").href = url;
+    }
+</script>
+</body>
+</html>
